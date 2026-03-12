@@ -2,42 +2,42 @@
   <q-layout view="lHh Lpr lFf">
     <q-header elevated>
       <q-toolbar>
-        <q-btn
+        <q-toolbar-title>Agenda Pessoal</q-toolbar-title>
+        <q-btn-dropdown
+          v-if="authStore.isAuthenticated"
           flat
-          dense
-          round
-          icon="menu"
-          aria-label="Menu"
-          @click="toggleLeftDrawer"
-        />
-
-        <q-toolbar-title>
-          Quasar App
-        </q-toolbar-title>
-
-        <div>Quasar v{{ $q.version }}</div>
+          color="white"
+          :label="displayName"
+          icon="account_circle"
+          class="q-ml-sm"
+          dropdown-icon="arrow_drop_down"
+          title="Clique para ver opções"
+        >
+          <q-list>
+            <q-item clickable v-close-popup @click="menuStore.openChangePassword()">
+              <q-item-section>Alterar senha</q-item-section>
+              <q-tooltip style="font-size:16px">Mostra a tela pra alteração de senha</q-tooltip>
+            </q-item>
+            <q-item v-if="isAdmin" clickable v-close-popup @click="menuStore.openUsersManagement()">
+              <q-item-section style="font-size:16px">Gerenciar usuários</q-item-section>
+              <q-tooltip>Abre o gerenciamento de usuários</q-tooltip>
+            </q-item>
+            <q-item clickable v-close-popup @click="menuStore.openAuditHistory()">
+              <q-item-section>Histórico</q-item-section>
+              <q-tooltip style="font-size:16px">Mostra o histórico de operações</q-tooltip>
+            </q-item>
+            <q-item clickable v-close-popup @click="menuStore.openWhatsappSettings()">
+              <q-item-section>WhatsApp</q-item-section>
+              <q-tooltip style="font-size:16px">Configura envio de lembretes no WhatsApp</q-tooltip>
+            </q-item>
+            <q-item clickable v-close-popup @click="handleLogout">
+              <q-item-section>Sair</q-item-section>
+              <q-tooltip style="font-size:16px">Encerra sua sessão</q-tooltip>
+            </q-item>
+          </q-list>
+        </q-btn-dropdown>
       </q-toolbar>
     </q-header>
-
-    <q-drawer
-      v-model="leftDrawerOpen"
-      show-if-above
-      bordered
-    >
-      <q-list>
-        <q-item-label
-          header
-        >
-          Essential Links
-        </q-item-label>
-
-        <EssentialLink
-          v-for="link in linksList"
-          :key="link.title"
-          v-bind="link"
-        />
-      </q-list>
-    </q-drawer>
 
     <q-page-container>
       <router-view />
@@ -46,57 +46,23 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue';
-import EssentialLink, { type EssentialLinkProps } from 'components/EssentialLink.vue';
+import { computed, onMounted } from 'vue';
+import { useRouter } from 'vue-router';
+import { useAuthStore } from 'src/stores/auth-store';
+import { useMenuStore } from 'src/stores/menu-store';
 
-const linksList: EssentialLinkProps[] = [
-  {
-    title: 'Docs',
-    caption: 'quasar.dev',
-    icon: 'school',
-    link: 'https://quasar.dev'
-  },
-  {
-    title: 'Github',
-    caption: 'github.com/quasarframework',
-    icon: 'code',
-    link: 'https://github.com/quasarframework'
-  },
-  {
-    title: 'Discord Chat Channel',
-    caption: 'chat.quasar.dev',
-    icon: 'chat',
-    link: 'https://chat.quasar.dev'
-  },
-  {
-    title: 'Forum',
-    caption: 'forum.quasar.dev',
-    icon: 'record_voice_over',
-    link: 'https://forum.quasar.dev'
-  },
-  {
-    title: 'Twitter',
-    caption: '@quasarframework',
-    icon: 'rss_feed',
-    link: 'https://twitter.quasar.dev'
-  },
-  {
-    title: 'Facebook',
-    caption: '@QuasarFramework',
-    icon: 'public',
-    link: 'https://facebook.quasar.dev'
-  },
-  {
-    title: 'Quasar Awesome',
-    caption: 'Community Quasar projects',
-    icon: 'favorite',
-    link: 'https://awesome.quasar.dev'
-  }
-];
+const router = useRouter();
+const authStore = useAuthStore();
+const menuStore = useMenuStore();
+const displayName = computed(() => authStore.user?.name || authStore.user?.email || 'Usuário');
+const isAdmin = computed(() => authStore.user?.role === 'ADMIN');
 
-const leftDrawerOpen = ref(false);
+onMounted(() => {
+  void authStore.restoreSession();
+});
 
-function toggleLeftDrawer () {
-  leftDrawerOpen.value = !leftDrawerOpen.value;
+async function handleLogout() {
+  await authStore.logout();
+  void router.push('/');
 }
 </script>
